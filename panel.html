@@ -92,10 +92,7 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 6px 10px 6px 9px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--surface-raised);
+    padding: 0;
     flex: none;
   }
   .almanac-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: none; }
@@ -143,18 +140,14 @@
   }
 
   .day-card {
-    /* The strip keeps one readable height; the month overview below takes the
-       rest of the canvas, so the five colours never stretch into a wall. */
+    /* No frame: the bar sits on the page and the five colours are the band.
+       The strip keeps one readable height; the month below takes the rest. */
     flex: none;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    background: var(--surface-raised);
-    overflow: hidden;
   }
-  .day-bar { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+  .day-bar { display: flex; align-items: center; gap: 10px; padding: 2px 0 9px; }
   .day-nav { display: flex; align-items: center; gap: 4px; }
   .day-date { display: flex; align-items: baseline; justify-content: center; gap: 8px; min-width: 132px; }
   .day-date strong { font: 600 14px/1.2 var(--font-display); font-variant-numeric: tabular-nums; }
@@ -314,51 +307,62 @@
     outline-offset: 2px;
   }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.quiet { border-color: transparent; background: transparent; color: var(--ink-soft); }
+  .btn.quiet:hover { border-color: transparent; color: var(--ink); }
   .btn.primary:hover { opacity: 0.9; border-color: var(--accent); }
   .btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
   .btn:disabled:hover { border-color: var(--line); opacity: 0.45; }
   .btn.primary:disabled:hover { border-color: var(--accent); opacity: 0.45; }
+  /* The format switch is type, not a box: four words in a row with a pill
+     under the one that is on, the same indicator the tabs use. */
   .segmented {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    padding: 2px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--surface-raised);
+    gap: 16px;
+    padding: 0;
   }
   .segment {
+    position: relative;
     appearance: none;
     border: 0;
-    height: 24px;
-    padding: 0 9px;
-    border-radius: var(--radius-xs);
+    height: 22px;
+    padding: 0;
+    border-radius: 0;
     background: transparent;
     color: var(--ink-soft);
     font: 600 10.5px/1 var(--font-body);
     letter-spacing: 0.06em;
   }
-  .segment[aria-pressed="true"] { background: var(--surface-solid); color: var(--ink); }
+  .segment:hover { color: var(--ink); }
+  .segment::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background: transparent;
+  }
+  .segment[aria-pressed="true"] { color: var(--ink); }
+  .segment[aria-pressed="true"]::after { background: var(--accent); }
 
   .hint { color: var(--ink-soft); font-size: 11px; line-height: 1.45; }
   .meta { color: var(--ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; }
 
+  /* The picker is a colour block and type on the page: no card around the
+     pair, no frame around the well, and the fields are ruled, not boxed. */
   .picker {
     flex: none;
     display: grid;
     grid-template-columns: 176px minmax(0, 1fr);
     gap: 18px;
-    padding: 16px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    background: var(--surface-raised);
+    padding: 0;
   }
   .well {
     position: relative;
     width: 176px;
     min-height: 176px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
     background: #3a7bff;
     overflow: hidden;
     cursor: pointer;
@@ -411,49 +415,59 @@
   }
   .field input[aria-invalid="true"] { border-color: var(--danger); }
   .field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .picker .field input {
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+  }
+  .picker .field input:focus-visible {
+    outline: none;
+    border-bottom-color: var(--accent);
+    box-shadow: 0 1px 0 var(--accent);
+  }
+  .readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
   .readout {
     appearance: none;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    padding: 7px 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--surface-solid);
+    padding: 0;
+    border: 0;
+    background: transparent;
     text-align: left;
     overflow: hidden;
   }
-  .readout:hover { border-color: var(--ink-soft); }
-  .readout span { font: 600 9.5px/1 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); }
   .readout code { font: 12px/1.2 var(--font-code); color: var(--ink); white-space: nowrap; }
+  .readout:hover code { color: var(--accent); }
+  .readout span { font: 600 9.5px/1 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); }
 
   .card {
     flex: 1;
     min-height: 196px;
     display: flex;
     flex-direction: column;
-    padding: 14px 16px 16px;
-    margin-top: 12px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    background: var(--surface-raised);
+    padding: 12px 0 0;
+    margin-top: 16px;
+    border-top: 1px solid var(--line);
   }
   .ramp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .ramp-head h2, .saved-head h2 { font: 600 13px/1.2 var(--font-display); }
   .steps { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-soft); }
   .steps select {
-    height: 26px;
-    padding: 0 4px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--surface-solid);
+    height: 24px;
+    padding: 0 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--ink);
     font: 11px/1 var(--font-body);
   }
   .steps select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .ramp { flex: 1; display: grid; grid-template-columns: repeat(var(--steps, 9), minmax(0, 1fr)); gap: 5px; }
+  .ramp { flex: 1; display: grid; grid-template-columns: repeat(var(--steps, 9), minmax(0, 1fr)); gap: 0; }
   .step { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .step-color {
     position: relative;
@@ -461,8 +475,8 @@
     flex: 1;
     min-height: 56px;
     padding: 0;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
+    border: 0;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -599,7 +613,8 @@
     .picker { grid-template-columns: 1fr; }
     .well { width: 100%; height: 96px; min-height: 96px; }
     .picker-fields { grid-template-columns: 1fr; }
-    .ramp { grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); }
+    /* Narrow steps wrap to keep their hex readable, so they part again. */
+    .ramp { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 12px 5px; }
     .saved-row { flex-direction: column; align-items: stretch; gap: 10px; }
     .saved-actions { justify-content: flex-end; }
   }
@@ -655,7 +670,7 @@
         <button class="segment" type="button" data-format="css" aria-pressed="false">CSS</button>
       </div>
       <span class="grow"></span>
-      <button class="btn" type="button" id="day-save" disabled>保存这套</button>
+      <button class="btn quiet" type="button" id="day-save" disabled>保存这套</button>
       <button class="btn primary" type="button" id="day-copy" data-icon="copy" disabled>复制这套</button>
     </div>
     <p class="hint" style="margin-top: 8px">点任意色块复制它的颜色；在日历里点一天，翻到那天的配色。</p>
@@ -696,7 +711,7 @@
       <div class="actions compact">
         <span class="hint">点任一格复制它的颜色。</span>
         <span class="grow"></span>
-        <button class="btn" type="button" id="ramp-save" disabled>保存色阶</button>
+        <button class="btn quiet" type="button" id="ramp-save" disabled>保存色阶</button>
         <button class="btn primary" type="button" id="ramp-copy" data-icon="copy" disabled>复制色阶</button>
       </div>
     </div>
