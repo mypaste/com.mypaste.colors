@@ -3,7 +3,7 @@
   "kind": "ui",
   "id": "com.mypaste.colors",
   "name": "配色",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "每天一款配色，也可以从任意颜色生成深浅色阶；收藏的配色留在扩展自己的私有目录，复制走宿主剪贴板。",
   "capabilities": [
     "storage.plugin"

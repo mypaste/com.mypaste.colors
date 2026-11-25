@@ -49,7 +49,10 @@
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  html { margin: 0; }
+  /* Panels, empty states and counts all use the attribute, and several now
+     carry a display of their own. */
+  [hidden] { display: none !important; }
+  html { margin: 0; height: 100%; }
   body {
     margin: 0;
     min-height: 100%;
@@ -59,6 +62,8 @@
     color: var(--ink);
     font: 13px/1.5 var(--font-body);
     -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
   }
   h1, h2, p { margin: 0; }
   button, input, select { font: inherit; color: inherit; }
@@ -75,7 +80,10 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .page { max-width: 760px; }
+  /* The settings canvas gives the page its width and height; the page fills
+     both, so a short tab grows its colours instead of leaving a void. */
+  .page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
   .masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
   h1 { font: 600 20px/1.25 var(--font-display); letter-spacing: 0.01em; }
@@ -135,6 +143,10 @@
   }
 
   .day-card {
+    flex: 1;
+    min-height: 196px;
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     background: var(--surface-raised);
@@ -169,7 +181,7 @@
   }
   .link-btn:hover { text-decoration: underline; }
 
-  .day-strip { display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 1fr)); }
+  .day-strip { flex: 1; display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 1fr)); }
   .day-swatch {
     position: relative;
     appearance: none;
@@ -177,7 +189,7 @@
     border-radius: 0;
     margin: 0;
     padding: 12px 12px 14px;
-    min-height: 168px;
+    min-height: 152px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -258,9 +270,10 @@
   .meta { color: var(--ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; }
 
   .picker {
+    flex: none;
     display: grid;
-    grid-template-columns: 148px minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: 176px minmax(0, 1fr);
+    gap: 18px;
     padding: 16px;
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
@@ -268,8 +281,8 @@
   }
   .well {
     position: relative;
-    width: 148px;
-    height: 148px;
+    width: 176px;
+    min-height: 176px;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     background: #3a7bff;
@@ -300,9 +313,15 @@
     letter-spacing: 0.08em;
     pointer-events: none;
   }
-  .picker-fields { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-  .picker-fields .field { max-width: 440px; }
-  .picker-fields .readouts { max-width: 440px; }
+  .picker-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 10px 14px;
+    min-width: 0;
+  }
+  /* The hint sits on the card's bottom line, level with the well. */
+  .picker-fields .hint { grid-column: 1 / -1; align-self: end; }
   .field-label { display: block; font: 600 10px/1 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); margin-bottom: 6px; }
   .field input {
     width: 100%;
@@ -336,7 +355,17 @@
   .readout span { font: 600 9.5px/1 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); }
   .readout code { font: 12px/1.2 var(--font-code); color: var(--ink); white-space: nowrap; }
 
-  .card { padding: 14px 16px 16px; margin-top: 12px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-raised); }
+  .card {
+    flex: 1;
+    min-height: 196px;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 16px 16px;
+    margin-top: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+  }
   .ramp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .ramp-head h2, .saved-head h2 { font: 600 13px/1.2 var(--font-display); }
   .steps { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-soft); }
@@ -350,12 +379,13 @@
     font: 11px/1 var(--font-body);
   }
   .steps select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .ramp { display: grid; grid-template-columns: repeat(var(--steps, 9), minmax(0, 1fr)); gap: 5px; }
+  .ramp { flex: 1; display: grid; grid-template-columns: repeat(var(--steps, 9), minmax(0, 1fr)); gap: 5px; }
   .step { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .step-color {
     position: relative;
     appearance: none;
-    height: 56px;
+    flex: 1;
+    min-height: 56px;
     padding: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
@@ -411,12 +441,16 @@
   .saved-chip { flex: 1; min-width: 8px; padding: 0; border: 0; appearance: none; }
   .saved-chip:hover { opacity: 0.86; }
   .saved-actions { display: flex; gap: 6px; flex: none; }
+  /* An empty collectible list holds the space its rows would take, centred
+     and quiet, instead of a slab the height of the page. */
   .empty {
+    flex: 1;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-top: 12px;
     padding: 26px 16px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    background: var(--surface-raised);
     text-align: center;
     color: var(--ink-soft);
     font-size: 12px;
@@ -468,7 +502,9 @@
     .tabs { gap: 16px; }
     .day-bar { flex-wrap: wrap; }
     .day-date { min-width: 0; }
-    .day-strip { grid-template-columns: 1fr; }
+    /* Stacked colour rows keep their own height, and the page scrolls. */
+    .day-card { flex: none; }
+    .day-strip { flex: none; grid-template-columns: 1fr; }
     .day-swatch {
       min-height: 0;
       flex-direction: row;
@@ -481,7 +517,8 @@
     .day-swatch .foot { margin-top: 0; margin-left: auto; flex-direction: row; align-items: baseline; gap: 10px; }
     .day-status { min-height: 140px; }
     .picker { grid-template-columns: 1fr; }
-    .well { width: 100%; height: 96px; }
+    .well { width: 100%; height: 96px; min-height: 96px; }
+    .picker-fields { grid-template-columns: 1fr; }
     .ramp { grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); }
     .saved-row { flex-direction: column; align-items: stretch; gap: 10px; }
     .saved-actions { justify-content: flex-end; }
