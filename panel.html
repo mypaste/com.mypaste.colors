@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="zh-CN" data-scheme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>配色</title>
+<script>
+  // The sandbox's prefers-color-scheme follows the system, not the appearance
+  // picked in MyPaste; this is only the first frame. The host's `theme` push
+  // replaces it as soon as the page says it is ready.
+  (function () {
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.documentElement.dataset.scheme = "dark";
+    }
+  })();
+</script>
+<style>
+  :root {
+    --surface-solid: #ffffff;
+    --surface-raised: #f6f6f3;
+    --ink: #1d1d1f;
+    --ink-soft: #6b6b70;
+    --line: #d8d8d4;
+    --accent: #2f6fed;
+    --accent-ink: #ffffff;
+    --danger: #c0392b;
+    --success: #218739;
+    --font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    --font-display: var(--font-body);
+    --font-code: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-pill: 999px;
+    color-scheme: light;
+  }
+  :root[data-scheme="dark"] {
+    --surface-solid: #1c1c1e;
+    --surface-raised: #262628;
+    --ink: #f2f2f4;
+    --ink-soft: #a1a1a6;
+    --line: #3a3a3d;
+    --accent: #6f9dff;
+    --accent-ink: #101014;
+    --danger: #ff7b6f;
+    --success: #5fd07e;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { margin: 0; }
+  body {
+    margin: 0;
+    min-height: 100%;
+    /* No side gutter of its own: the settings canvas already supplies one. */
+    padding: 20px 0 24px;
+    background: var(--surface-solid);
+    color: var(--ink);
+    font: 13px/1.5 var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, p { margin: 0; }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: 0.45; }
+  [hidden] { display: none !important; }
+  .icon {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .page { max-width: 760px; }
+
+  .masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  h1 { font: 600 20px/1.25 var(--font-display); letter-spacing: 0.01em; }
+  .intro { margin-top: 6px; color: var(--ink-soft); }
+  .almanac {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 10px 6px 9px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    flex: none;
+  }
+  .almanac-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: none; }
+  .almanac-day { font: 600 18px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+  .almanac-meta { color: var(--ink-soft); font-size: 10px; line-height: 1.35; letter-spacing: 0.04em; white-space: nowrap; }
+
+  .tabs { display: flex; gap: 22px; margin: 18px 0 18px; border-bottom: 1px solid var(--line); }
+  .tab {
+    position: relative;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--ink-soft);
+    font: 600 12px/1 var(--font-body);
+    letter-spacing: 0.06em;
+    padding: 0 0 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background: transparent;
+  }
+  .tab[aria-selected="true"] { color: var(--ink); }
+  .tab[aria-selected="true"]::after { background: var(--accent); }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-xs); }
+  .tab-count {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--surface-raised);
+    color: var(--ink-soft);
+    font: 600 10px/14px var(--font-body);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .day-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+    overflow: hidden;
+  }
+  .day-bar { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+  .day-nav { display: flex; align-items: center; gap: 4px; }
+  .day-date { display: flex; align-items: baseline; justify-content: center; gap: 8px; min-width: 132px; }
+  .day-date strong { font: 600 14px/1.2 var(--font-display); font-variant-numeric: tabular-nums; }
+  .day-date span { font-size: 11px; color: var(--ink-soft); }
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--ink-soft);
+  }
+  .icon-btn:hover { border-color: var(--line); background: var(--surface-solid); color: var(--ink); }
+  .icon-btn:focus-visible, .link-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .link-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font: 600 11px/1 var(--font-body);
+    padding: 6px 4px;
+    margin-left: auto;
+  }
+  .link-btn:hover { text-decoration: underline; }
+
+  .day-strip { display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 1fr)); }
+  .day-swatch {
+    position: relative;
+    appearance: none;
+    border: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 12px 12px 14px;
+    min-height: 168px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    text-align: left;
+  }
+  .day-swatch .role { font: 600 10px/1 var(--font-body); letter-spacing: 0.14em; opacity: 0.7; }
+  .day-swatch .copy-mark { position: absolute; top: 10px; right: 10px; opacity: 0; transition: opacity 0.12s ease; }
+  .day-swatch:hover .copy-mark, .day-swatch:focus-visible .copy-mark { opacity: 0.85; }
+  .day-swatch .foot { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
+  .day-swatch .name { font: 600 14px/1.2 var(--font-display); }
+  .day-swatch .hex { font: 11px/1.3 var(--font-code); letter-spacing: 0.02em; opacity: 0.82; }
+  .day-swatch:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+  .day-status {
+    grid-column: 1 / -1;
+    min-height: 168px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  .actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .actions.compact { margin-top: 12px; }
+  .grow { flex: 1; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-solid);
+    color: var(--ink);
+    font: 600 11px/1 var(--font-body);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--ink-soft); }
+  .btn:focus-visible, .segment:focus-visible, .readout:focus-visible,
+  .step-color:focus-visible, .saved-chip:focus-visible, .chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { opacity: 0.9; border-color: var(--accent); }
+  .btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+  .btn:disabled:hover { border-color: var(--line); opacity: 0.45; }
+  .btn.primary:disabled:hover { border-color: var(--accent); opacity: 0.45; }
+  .segmented {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+  }
+  .segment {
+    appearance: none;
+    border: 0;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--ink-soft);
+    font: 600 10.5px/1 var(--font-body);
+    letter-spacing: 0.06em;
+  }
+  .segment[aria-pressed="true"] { background: var(--surface-solid); color: var(--ink); }
+
+  .hint { color: var(--ink-soft); font-size: 11px; line-height: 1.45; }
+  .meta { color: var(--ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+  .picker {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+  }
+  .well {
+    position: relative;
+    width: 148px;
+    height: 148px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: #3a7bff;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .well:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .well input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .well-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 6px 11px;
+    border-radius: var(--radius-pill);
+    background: rgba(0, 0, 0, 0.32);
+    color: #ffffff;
+    font: 600 11px/1 var(--font-body);
+    letter-spacing: 0.08em;
+    pointer-events: none;
+  }
+  .picker-fields { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .picker-fields .field { max-width: 440px; }
+  .picker-fields .readouts { max-width: 440px; }
+  .field-label { display: block; font: 600 10px/1 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-solid);
+    color: var(--ink);
+    font: 13px/1 var(--font-code);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .field input[aria-invalid="true"] { border-color: var(--danger); }
+  .field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .readout {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-solid);
+    text-align: left;
+    overflow: hidden;
+  }
+  .readout:hover { border-color: var(--ink-soft); }
+  .readout span { font: 600 9.5px/1 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); }
+  .readout code { font: 12px/1.2 var(--font-code); color: var(--ink); white-space: nowrap; }
+
+  .card { padding: 14px 16px 16px; margin-top: 12px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-raised); }
+  .ramp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .ramp-head h2, .saved-head h2 { font: 600 13px/1.2 var(--font-display); }
+  .steps { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-soft); }
+  .steps select {
+    height: 26px;
+    padding: 0 4px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-solid);
+    color: var(--ink);
+    font: 11px/1 var(--font-body);
+  }
+  .steps select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .ramp { display: grid; grid-template-columns: repeat(var(--steps, 9), minmax(0, 1fr)); gap: 5px; }
+  .step { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .step-color {
+    position: relative;
+    appearance: none;
+    height: 56px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-color .icon { opacity: 0; }
+  .step-color:hover .icon { opacity: 0.7; }
+  .step-hex {
+    font: 10px/1.2 var(--font-code);
+    color: var(--ink-soft);
+    text-align: center;
+    letter-spacing: 0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .step-tag { height: 12px; font: 600 9px/12px var(--font-body); letter-spacing: 0.08em; color: var(--accent); text-align: center; }
+  .ramp-status {
+    grid-column: 1 / -1;
+    min-height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .saved-head { display: flex; align-items: baseline; gap: 8px; }
+  .saved-hint { margin-top: 6px; }
+  .saved-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .saved-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+  }
+  .saved-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .saved-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .saved-title strong { font: 600 13px/1.2 var(--font-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .saved-strip {
+    display: flex;
+    gap: 2px;
+    height: 24px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xs);
+    overflow: hidden;
+  }
+  .saved-chip { flex: 1; min-width: 8px; padding: 0; border: 0; appearance: none; }
+  .saved-chip:hover { opacity: 0.86; }
+  .saved-actions { display: flex; gap: 6px; flex: none; }
+  .empty {
+    margin-top: 12px;
+    padding: 26px 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .status { text-align: center; padding: 24px 16px; color: var(--ink-soft); font-size: 12px; }
+  .status .btn { margin-top: 10px; }
+
+  .dialog {
+    width: min(420px, calc(100vw - 40px));
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface-solid);
+    color: var(--ink);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  }
+  .dialog::backdrop { background: rgba(15, 15, 18, 0.32); }
+  .dialog-head { padding: 16px 18px 0; }
+  .dialog-head h2 { font: 600 15px/1.2 var(--font-display); }
+  .dialog-body { display: flex; flex-direction: column; gap: 10px; padding: 12px 18px 0; }
+  .dialog-preview { display: flex; gap: 2px; height: 40px; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+  .dialog-preview span { flex: 1; }
+  .dialog-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; padding: 14px 18px 16px; border-top: 1px solid var(--line); }
+  .error { color: var(--danger); font-size: 11px; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    z-index: 20;
+    max-width: calc(100% - 32px);
+    padding: 7px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--surface-raised);
+    color: var(--ink);
+    font: 600 11px/1.4 var(--font-body);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(6px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+  .toast[data-show="1"] { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 620px) {
+    .almanac { display: none; }
+    .tabs { gap: 16px; }
+    .day-bar { flex-wrap: wrap; }
+    .day-date { min-width: 0; }
+    .day-strip { grid-template-columns: 1fr; }
+    .day-swatch {
+      min-height: 0;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+    }
+    .day-swatch .role { width: 38px; flex: none; }
+    .day-swatch .copy-mark { display: none; }
+    .day-swatch .foot { margin-top: 0; margin-left: auto; flex-direction: row; align-items: baseline; gap: 10px; }
+    .day-status { min-height: 140px; }
+    .picker { grid-template-columns: 1fr; }
+    .well { width: 100%; height: 96px; }
+    .ramp { grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); }
+    .saved-row { flex-direction: column; align-items: stretch; gap: 10px; }
+    .saved-actions { justify-content: flex-end; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .day-swatch .copy-mark, .toast { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="masthead">
+    <div>
+      <h1>配色</h1>
+      <p class="intro">每天一款配色；取一个颜色，得到它的深浅阶梯。</p>
+    </div>
+    <aside class="almanac" aria-hidden="true">
+      <span class="almanac-dot" id="almanac-dot"></span>
+      <span class="almanac-day" id="almanac-day">—</span>
+      <span class="almanac-meta" id="almanac-meta">—</span>
+    </aside>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="配色" id="tabs">
+    <button class="tab" type="button" role="tab" id="tab-daily" data-tab="daily" aria-selected="true" aria-controls="panel-daily">每日</button>
+    <button class="tab" type="button" role="tab" id="tab-picker" data-tab="picker" aria-selected="false" aria-controls="panel-picker" tabindex="-1">取色</button>
+    <button class="tab" type="button" role="tab" id="tab-saved" data-tab="saved" aria-selected="false" aria-controls="panel-saved" tabindex="-1">收藏<span class="tab-count" id="tab-count" hidden>0</span></button>
+  </nav>
+
+  <section class="panel" id="panel-daily" role="tabpanel" aria-labelledby="tab-daily">
+    <article class="day-card">
+      <div class="day-bar">
+        <div class="day-nav">
+          <button class="icon-btn" type="button" id="day-prev" aria-label="前一天" title="前一天" data-icon="left"></button>
+          <p class="day-date"><strong id="day-label">—</strong><span id="day-weekday"></span></p>
+          <button class="icon-btn" type="button" id="day-next" aria-label="后一天" title="后一天" data-icon="right"></button>
+        </div>
+        <button class="link-btn" type="button" id="day-today" hidden>回到今天</button>
+      </div>
+      <div class="day-strip" id="day-strip" aria-live="polite"></div>
+    </article>
+    <div class="actions">
+      <div class="segmented" role="group" aria-label="复制格式">
+        <button class="segment" type="button" data-format="hex" aria-pressed="true">HEX</button>
+        <button class="segment" type="button" data-format="rgb" aria-pressed="false">RGB</button>
+        <button class="segment" type="button" data-format="hsl" aria-pressed="false">HSL</button>
+        <button class="segment" type="button" data-format="css" aria-pressed="false">CSS</button>
+      </div>
+      <span class="grow"></span>
+      <button class="btn" type="button" id="day-save" disabled>保存这套</button>
+      <button class="btn primary" type="button" id="day-copy" data-icon="copy" disabled>复制这套</button>
+    </div>
+    <p class="hint" style="margin-top: 8px">点任意色块复制它的颜色；明天 0 点自动换新。</p>
+  </section>
+
+  <section class="panel" id="panel-picker" role="tabpanel" aria-labelledby="tab-picker" hidden>
+    <div class="picker">
+      <label class="well" id="well" title="打开系统取色器">
+        <input type="color" id="well-input" value="#3a7bff" aria-label="选择颜色">
+        <span class="well-label" aria-hidden="true">取色</span>
+      </label>
+      <div class="picker-fields">
+        <label class="field">
+          <span class="field-label">HEX</span>
+          <input id="hex-input" value="#3A7BFF" maxlength="7" spellcheck="false" autocomplete="off" aria-describedby="hex-hint">
+        </label>
+        <div class="readouts">
+          <button class="readout" type="button" data-readout="rgb"><span>RGB</span><code id="readout-rgb">—</code></button>
+          <button class="readout" type="button" data-readout="hsl"><span>HSL</span><code id="readout-hsl">—</code></button>
+        </div>
+        <p class="hint" id="hex-hint">点色块打开系统取色器，可以吸取屏幕上的任意颜色。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ramp-head">
+        <h2>色阶</h2>
+        <span class="meta" id="ramp-name">—</span>
+        <label class="steps">阶数
+          <select id="step-count">
+            <option value="5">5</option>
+            <option value="7">7</option>
+            <option value="9" selected>9</option>
+            <option value="11">11</option>
+          </select>
+        </label>
+      </div>
+      <div class="ramp" id="ramp" aria-live="polite"></div>
+      <div class="actions compact">
+        <span class="hint">点任一格复制它的颜色。</span>
+        <span class="grow"></span>
+        <button class="btn" type="button" id="ramp-save" disabled>保存色阶</button>
+        <button class="btn primary" type="button" id="ramp-copy" data-icon="copy" disabled>复制色阶</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-saved" role="tabpanel" aria-labelledby="tab-saved" hidden>
+    <div class="saved-head">
+      <h2>收藏</h2>
+      <span class="meta" id="saved-count">—</span>
+    </div>
+    <p class="hint saved-hint">保存在扩展的私有目录，卸载扩展时一起删除。</p>
+    <div class="saved-list" id="saved-list"></div>
+    <div class="empty" id="saved-empty" hidden>还没有收藏。把每天的一套或取色的色阶存下来，就会出现在这里。</div>
+    <div class="status" id="saved-status" hidden></div>
+  </section>
+</main>
+
+<dialog class="dialog" id="save-dialog" aria-labelledby="save-title">
+  <div class="dialog-head">
+    <h2 id="save-title">保存配色</h2>
+  </div>
+  <form id="save-form">
+    <div class="dialog-body">
+      <div class="dialog-preview" id="save-preview"></div>
+      <p class="hint" id="save-hint">—</p>
+      <label class="field">
+        <span class="field-label">名称</span>
+        <input id="save-name" type="text" maxlength="40" autocomplete="off" autofocus>
+      </label>
+      <p class="error" id="save-error" hidden></p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn" type="button" id="save-cancel">取消</button>
+      <button class="btn primary" type="submit" id="save-confirm">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PLUGIN_ID = "com.mypaste.colors";
+  var COMMAND_ID = "colors.request";
+  var TABS = ["daily", "picker", "saved"];
+  var WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  // CSS custom-property names for the five roles the runtime assigns. The
+  // words here are presentation only; the palette itself never depends on them.
+  var ROLE_SLUGS = { "主色": "main", "浅调": "light", "深调": "deep", "强调": "accent", "中性": "neutral" };
+  var ICON_PATHS = {
+    copy: "M6.8 5.5h4.9A1.3 1.3 0 0 1 13 6.8v4.9a1.3 1.3 0 0 1-1.3 1.3H6.8a1.3 1.3 0 0 1-1.3-1.3V6.8a1.3 1.3 0 0 1 1.3-1.3zM9.8 5.5V4.3A1.3 1.3 0 0 0 8.5 3H4.3A1.3 1.3 0 0 0 3 4.3v4.2A1.3 1.3 0 0 0 4.3 9.8h1.2",
+    left: "M9.5 3.5 5.5 8l4 4.5",
+    right: "M6.5 3.5 10.5 8l-4 4.5",
+    trash: "M3.5 4.5h9M6.5 4.5V3.2h3v1.3M5 4.5l.5 8h5l.5-8M7 7v3.5M9 7v3.5",
+    check: "M3.5 8.5 6.5 11.5 12.5 4.5"
+  };
+
+  var root = document.documentElement;
+  var pending = new Map();
+  var sequence = 0;
+  var toastTimer = 0;
+  var rampTimer = 0;
+  var midnightTimer = 0;
+  var dayToken = 0;
+  var armed = null;
+  var pendingSave = null;
+  var saving = false;
+  var pickerSeeded = false;
+
+  var state = {
+    tab: "daily",
+    format: "hex",
+    today: "",
+    date: "",
+    day: null,
+    palettes: null,
+    savedFailed: false,
+    picked: { hex: "#3A7BFF", count: 9, ramp: [], base: null, touched: false, token: 0 }
+  };
+
+  var els = {
+    tabs: document.getElementById("tabs"),
+    tabCount: document.getElementById("tab-count"),
+    almanacDay: document.getElementById("almanac-day"),
+    almanacMeta: document.getElementById("almanac-meta"),
+    almanacDot: document.getElementById("almanac-dot"),
+    dayLabel: document.getElementById("day-label"),
+    dayWeekday: document.getElementById("day-weekday"),
+    dayPrev: document.getElementById("day-prev"),
+    dayNext: document.getElementById("day-next"),
+    dayToday: document.getElementById("day-today"),
+    dayStrip: document.getElementById("day-strip"),
+    daySave: document.getElementById("day-save"),
+    dayCopy: document.getElementById("day-copy"),
+    well: document.getElementById("well"),
+    wellInput: document.getElementById("well-input"),
+    hexInput: document.getElementById("hex-input"),
+    readoutRgb: document.getElementById("readout-rgb"),
+    readoutHsl: document.getElementById("readout-hsl"),
+    stepCount: document.getElementById("step-count"),
+    ramp: document.getElementById("ramp"),
+    rampName: document.getElementById("ramp-name"),
+    rampSave: document.getElementById("ramp-save"),
+    rampCopy: document.getElementById("ramp-copy"),
+    savedList: document.getElementById("saved-list"),
+    savedCount: document.getElementById("saved-count"),
+    savedEmpty: document.getElementById("saved-empty"),
+    savedStatus: document.getElementById("saved-status"),
+    dialog: document.getElementById("save-dialog"),
+    saveForm: document.getElementById("save-form"),
+    savePreview: document.getElementById("save-preview"),
+    saveHint: document.getElementById("save-hint"),
+    saveName: document.getElementById("save-name"),
+    saveError: document.getElementById("save-error"),
+    saveCancel: document.getElementById("save-cancel"),
+    saveConfirm: document.getElementById("save-confirm"),
+    toast: document.getElementById("toast")
+  };
+
+  // --- host channel -------------------------------------------------------
+
+  function post(message) {
+    parent.postMessage(message, "*");
+  }
+
+  function messageOf(value, fallback) {
+    if (typeof value === "string" && value) return value;
+    if (value && typeof value.message === "string" && value.message) return value.message;
+    return fallback;
+  }
+
+  function watch(requestId, reject) {
+    setTimeout(function () {
+      if (!pending.has(requestId)) return;
+      pending.delete(requestId);
+      reject(new Error("宿主没有回应"));
+    }, 15000);
+  }
+
+  function invoke(asked) {
+    return new Promise(function (resolve, reject) {
+      var requestId = ++sequence;
+      pending.set(requestId, { resolve: resolve, reject: reject });
+      post({
+        v: 1, type: "invoke", requestId: requestId,
+        pluginId: PLUGIN_ID, commandId: COMMAND_ID, text: JSON.stringify(asked)
+      });
+      watch(requestId, reject);
+    }).then(function (answer) {
+      if (answer && answer.ok === true) return answer;
+      throw new Error(messageOf(answer && answer.error, "操作失败"));
+    });
+  }
+
+  function hostCopy(text) {
+    return new Promise(function (resolve, reject) {
+      var requestId = ++sequence;
+      pending.set(requestId, { raw: true, resolve: resolve, reject: reject });
+      post({ v: 1, type: "copy", requestId: requestId, text: String(text) });
+      watch(requestId, reject);
+    });
+  }
+
+  var themed = [];
+
+  function applyTheme(message) {
+    root.dataset.scheme = message.scheme === "dark" ? "dark" : "light";
+    var tokens = message.tokens || {};
+    // A token the host stops sending falls back to this stylesheet's palette,
+    // not to the colour of the appearance before it.
+    themed.forEach(function (name) {
+      if (!Object.prototype.hasOwnProperty.call(tokens, name)) {
+        root.style.removeProperty("--" + name);
+      }
+    });
+    themed = Object.keys(tokens);
+    themed.forEach(function (name) {
+      root.style.setProperty("--" + name, tokens[name]);
+    });
+  }
+
+  window.addEventListener("message", function (event) {
+    var message = event.data;
+    if (!message || message.v !== 1) return;
+    if (message.type === "theme") { applyTheme(message); return; }
+    if (message.type !== "result") return;
+    var waiter = pending.get(message.requestId);
+    if (!waiter) return;
+    pending.delete(message.requestId);
+    if (!message.ok) {
+      waiter.reject(new Error(messageOf(message.error, "操作失败")));
+      return;
+    }
+    if (waiter.raw) { waiter.resolve(true); return; }
+    var answer;
+    try {
+      answer = JSON.parse(message.output || "{}");
+    } catch (parseError) {
+      waiter.reject(new Error("扩展返回的内容无法解析"));
+      return;
+    }
+    waiter.resolve(answer);
+  });
+
+  // --- small helpers ------------------------------------------------------
+
+  function pad(value) { return value < 10 ? "0" + value : String(value); }
+
+  function dateKey(date) {
+    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+  }
+
+  function todayKey() { return dateKey(new Date()); }
+
+  function parseKey(key) {
+    var parts = key.split("-");
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12);
+  }
+
+  function shiftKey(key, days) {
+    var date = parseKey(key);
+    date.setDate(date.getDate() + days);
+    return dateKey(date);
+  }
+
+  function monthDay(key) {
+    var date = parseKey(key);
+    return (date.getMonth() + 1) + "月" + date.getDate() + "日";
+  }
+
+  function weekdayOf(key) {
+    return WEEKDAYS[parseKey(key).getDay()];
+  }
+
+  function normalizeHex(raw) {
+    var value = String(raw || "").trim().replace(/^#/, "");
+    if (/^[0-9a-fA-F]{3}$/.test(value)) {
+      value = value[0] + value[0] + value[1] + value[1] + value[2] + value[2];
+    }
+    if (!/^[0-9a-fA-F]{6}$/.test(value)) return "";
+    return ("#" + value).toUpperCase();
+  }
+
+  function icon(kind) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("class", "icon");
+    svg.setAttribute("aria-hidden", "true");
+    var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", ICON_PATHS[kind] || ICON_PATHS.copy);
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function button(label, className) {
+    var element = document.createElement("button");
+    element.type = "button";
+    element.className = className;
+    element.textContent = label;
+    return element;
+  }
+
+  function showToast(text) {
+    els.toast.textContent = text;
+    els.toast.dataset.show = "1";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { els.toast.dataset.show = "0"; }, 1800);
+  }
+
+  // --- copy ---------------------------------------------------------------
+
+  function formatSwatch(swatch) {
+    if (state.format === "rgb") return swatch.rgb;
+    if (state.format === "hsl") return swatch.hsl;
+    return swatch.hex;
+  }
+
+  function cssVariable(swatch, index) {
+    var slug = ROLE_SLUGS[swatch.role];
+    return slug ? "--color-" + slug : "--color-" + (index + 1);
+  }
+
+  function cssLine(swatch, index) {
+    var note = [swatch.role, swatch.name].filter(Boolean).join(" ");
+    return cssVariable(swatch, index) + ": " + swatch.hex + ";" + (note ? " /* " + note + " */" : "");
+  }
+
+  function paletteText(swatches, title) {
+    if (state.format === "css") {
+      var lines = ["/* " + title + " */"];
+      swatches.forEach(function (swatch, index) { lines.push(cssLine(swatch, index)); });
+      return lines.join("\n");
+    }
+    return swatches.map(formatSwatch).join("\n");
+  }
+
+  function copyText(text, label) {
+    return hostCopy(text).then(function () {
+      showToast("已复制" + (label ? " " + label : ""));
+    }).catch(function (error) {
+      showToast("复制失败：" + messageOf(error, "剪贴板不可用"));
+    });
+  }
+
+  function copySwatch(swatch, index) {
+    copyText(state.format === "css" ? cssLine(swatch, index) : formatSwatch(swatch), swatch.hex);
+  }
+
+  // --- daily --------------------------------------------------------------
+
+  function renderAlmanac() {
+    var date = parseKey(state.today);
+    els.almanacDay.textContent = String(date.getDate());
+    els.almanacMeta.textContent = (date.getMonth() + 1) + "月 · " + WEEKDAYS[date.getDay()];
+  }
+
+  function renderDayStatus(text, withRetry) {
+    els.dayStrip.textContent = "";
+    var box = document.createElement("div");
+    box.className = "day-status";
+    var line = document.createElement("p");
+    line.className = "hint";
+    line.textContent = text;
+    box.appendChild(line);
+    if (withRetry) {
+      var retry = button("重试", "btn");
+      retry.addEventListener("click", function () { loadDay(state.date); });
+      box.appendChild(retry);
+    }
+    els.dayStrip.appendChild(box);
+  }
+
+  function daySwatch(swatch, index) {
+    var element = document.createElement("button");
+    element.type = "button";
+    element.className = "day-swatch";
+    element.style.background = swatch.hex;
+    element.style.color = swatch.ink;
+    element.setAttribute("aria-label", (swatch.role ? swatch.role + " " : "") + swatch.name + "，复制 " + swatch.hex);
+
+    var role = document.createElement("span");
+    role.className = "role";
+    role.textContent = swatch.role || "";
+
+    var mark = icon("copy");
+    mark.setAttribute("class", "icon copy-mark");
+
+    var foot = document.createElement("span");
+    foot.className = "foot";
+    var name = document.createElement("span");
+    name.className = "name";
+    name.textContent = swatch.name || "";
+    var hex = document.createElement("span");
+    hex.className = "hex";
+    hex.textContent = swatch.hex;
+    foot.appendChild(name);
+    foot.appendChild(hex);
+
+    element.appendChild(role);
+    element.appendChild(mark);
+    element.appendChild(foot);
+    element.addEventListener("click", function () { copySwatch(swatch, index); });
+    return element;
+  }
+
+  function renderDay() {
+    var day = state.day;
+    els.dayLabel.textContent = monthDay(day.date);
+    els.dayWeekday.textContent = day.weekday + (day.date === state.today ? " · 今天" : "");
+    els.dayToday.hidden = day.date === state.today;
+    els.dayStrip.textContent = "";
+    els.dayStrip.style.setProperty("--count", String(day.swatches.length));
+    day.swatches.forEach(function (swatch, index) {
+      els.dayStrip.appendChild(daySwatch(swatch, index));
+    });
+    els.dayCopy.disabled = false;
+    els.daySave.disabled = false;
+    if (day.date === state.today) {
+      els.almanacDot.style.background = day.swatches[0].hex;
+    }
+  }
+
+  function loadDay(key) {
+    var token = ++dayToken;
+    state.date = key;
+    state.day = null;
+    els.dayCopy.disabled = true;
+    els.daySave.disabled = true;
+    els.dayLabel.textContent = monthDay(key);
+    els.dayWeekday.textContent = weekdayOf(key);
+    els.dayToday.hidden = key === state.today;
+    renderDayStatus("正在生成这一天的配色…", false);
+    invoke({ action: "daily", date: key }).then(function (answer) {
+      if (token !== dayToken) return;
+      if (!answer.day || !answer.day.swatches || !answer.day.swatches.length) {
+        throw new Error("这一天的配色没有返回");
+      }
+      state.day = answer.day;
+      renderDay();
+      if (!pickerSeeded && key === state.today) {
+        pickerSeeded = true;
+        adoptTodayColour(answer.day.swatches[0].hex);
+      }
+    }).catch(function (error) {
+      if (token !== dayToken) return;
+      renderDayStatus("没能生成这一天的配色：" + messageOf(error, "未知错误"), true);
+    });
+  }
+
+  // --- picker -------------------------------------------------------------
+
+  function adoptTodayColour(hex) {
+    if (state.picked.touched) return;
+    state.picked.hex = hex;
+    els.well.style.background = hex;
+    els.wellInput.value = hex.toLowerCase();
+    els.hexInput.value = hex;
+    loadRamp();
+  }
+
+  function renderRampStatus(text) {
+    els.ramp.textContent = "";
+    var box = document.createElement("div");
+    box.className = "ramp-status";
+    var line = document.createElement("p");
+    line.className = "hint";
+    line.textContent = text;
+    box.appendChild(line);
+    els.ramp.appendChild(box);
+  }
+
+  function renderRamp() {
+    var ramp = state.picked.ramp;
+    var middle = Math.floor(ramp.length / 2);
+    els.ramp.textContent = "";
+    els.ramp.style.setProperty("--steps", String(ramp.length || 9));
+    ramp.forEach(function (swatch, index) {
+      var cell = document.createElement("div");
+      cell.className = "step";
+
+      var colour = document.createElement("button");
+      colour.type = "button";
+      colour.className = "step-color";
+      colour.style.background = swatch.hex;
+      colour.style.color = swatch.ink;
+      colour.setAttribute("aria-label", "复制 " + swatch.hex);
+      colour.appendChild(icon("copy"));
+      colour.addEventListener("click", function () { copySwatch(swatch, index); });
+
+      var hex = document.createElement("span");
+      hex.className = "step-hex";
+      hex.textContent = swatch.hex;
+
+      var tag = document.createElement("span");
+      tag.className = "step-tag";
+      if (index === middle) tag.textContent = "所选";
+
+      cell.appendChild(colour);
+      cell.appendChild(hex);
+      cell.appendChild(tag);
+      els.ramp.appendChild(cell);
+    });
+  }
+
+  function loadRamp() {
+    clearTimeout(rampTimer);
+    var token = ++state.picked.token;
+    invoke({ action: "ramp", hex: state.picked.hex, count: state.picked.count }).then(function (answer) {
+      if (token !== state.picked.token) return;
+      var ramp = answer.swatches || [];
+      if (!ramp.length) throw new Error("色阶没有返回");
+      state.picked.ramp = ramp;
+      state.picked.base = ramp[Math.floor(ramp.length / 2)];
+      state.picked.hex = state.picked.base.hex;
+      els.hexInput.value = state.picked.base.hex;
+      els.hexInput.removeAttribute("aria-invalid");
+      els.well.style.background = state.picked.base.hex;
+      els.wellInput.value = state.picked.base.hex.toLowerCase();
+      els.readoutRgb.textContent = state.picked.base.rgb;
+      els.readoutHsl.textContent = state.picked.base.hsl;
+      els.rampName.textContent = ramp.length + " 阶 · " + state.picked.base.name;
+      renderRamp();
+      els.rampCopy.disabled = false;
+      els.rampSave.disabled = false;
+    }).catch(function (error) {
+      if (token !== state.picked.token) return;
+      state.picked.ramp = [];
+      state.picked.base = null;
+      renderRampStatus("没能生成色阶：" + messageOf(error, "未知错误"));
+      els.rampName.textContent = "—";
+      els.rampCopy.disabled = true;
+      els.rampSave.disabled = true;
+    });
+  }
+
+  function setPickerHex(hex, touched) {
+    state.picked.hex = hex;
+    if (touched) state.picked.touched = true;
+    els.well.style.background = hex;
+    els.wellInput.value = hex.toLowerCase();
+    clearTimeout(rampTimer);
+    rampTimer = setTimeout(loadRamp, 120);
+  }
+
+  // --- saved --------------------------------------------------------------
+
+  function dateLabelFromISO(iso) {
+    var date = new Date(iso);
+    if (isNaN(date.getTime())) return "";
+    return (date.getMonth() + 1) + "月" + date.getDate() + "日";
+  }
+
+  function savedMeta(palette) {
+    var when = dateLabelFromISO(palette.createdAt);
+    return (when ? when + " · " : "") + palette.swatches.length + " 色";
+  }
+
+  function disarm() {
+    if (!armed) return;
+    clearTimeout(armed.timer);
+    armed.remove.textContent = "删除";
+    armed.remove.classList.remove("danger");
+    armed.cancel.hidden = true;
+    armed = null;
+  }
+
+  function deletePalette(palette) {
+    invoke({ action: "delete", id: palette.id }).then(function () {
+      state.palettes = (state.palettes || []).filter(function (item) { return item.id !== palette.id; });
+      renderSaved();
+      showToast("已删除「" + palette.name + "」");
+    }).catch(function (error) {
+      showToast("删除失败：" + messageOf(error, "未知错误"));
+    });
+  }
+
+  function savedRow(palette) {
+    var row = document.createElement("article");
+    row.className = "saved-row";
+
+    var main = document.createElement("div");
+    main.className = "saved-main";
+    var title = document.createElement("div");
+    title.className = "saved-title";
+    var name = document.createElement("strong");
+    name.textContent = palette.name;
+    var meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = savedMeta(palette);
+    title.appendChild(name);
+    title.appendChild(meta);
+
+    var strip = document.createElement("div");
+    strip.className = "saved-strip";
+    palette.swatches.forEach(function (swatch, index) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "saved-chip";
+      chip.style.background = swatch.hex;
+      chip.title = swatch.hex;
+      chip.setAttribute("aria-label", "复制 " + swatch.hex);
+      chip.addEventListener("click", function () { copySwatch(swatch, index); });
+      strip.appendChild(chip);
+    });
+    main.appendChild(title);
+    main.appendChild(strip);
+
+    var actions = document.createElement("div");
+    actions.className = "saved-actions";
+    var copy = button("复制", "btn");
+    copy.addEventListener("click", function () {
+      copyText(paletteText(palette.swatches, palette.name), "「" + palette.name + "」");
+    });
+    var cancel = button("取消", "btn");
+    cancel.hidden = true;
+    cancel.addEventListener("click", function () { disarm(); });
+    var remove = button("删除", "btn");
+    remove.addEventListener("click", function () {
+      if (!armed || armed.id !== palette.id) {
+        disarm();
+        armed = { id: palette.id, remove: remove, cancel: cancel, timer: 0, delete: remove };
+        remove.textContent = "确认删除";
+        remove.classList.add("danger");
+        cancel.hidden = false;
+        armed.timer = setTimeout(disarm, 4000);
+        return;
+      }
+      disarm();
+      deletePalette(palette);
+    });
+
+    actions.appendChild(copy);
+    actions.appendChild(cancel);
+    actions.appendChild(remove);
+    row.appendChild(main);
+    row.appendChild(actions);
+    return row;
+  }
+
+  function renderSaved() {
+    var palettes = state.palettes || [];
+    els.savedList.textContent = "";
+    els.savedList.hidden = palettes.length === 0;
+    els.savedEmpty.hidden = palettes.length !== 0 || state.savedFailed;
+    els.savedStatus.hidden = true;
+    els.savedCount.textContent = palettes.length + " 套";
+    els.tabCount.textContent = String(palettes.length);
+    els.tabCount.hidden = palettes.length === 0;
+    palettes.forEach(function (palette) {
+      els.savedList.appendChild(savedRow(palette));
+    });
+  }
+
+  function renderSavedError(text) {
+    state.savedFailed = true;
+    els.savedList.textContent = "";
+    els.savedList.hidden = true;
+    els.savedEmpty.hidden = true;
+    els.savedStatus.hidden = false;
+    els.savedStatus.textContent = "";
+    var line = document.createElement("p");
+    line.className = "hint";
+    line.textContent = text;
+    var retry = button("重试", "btn");
+    retry.addEventListener("click", function () {
+      state.savedFailed = false;
+      loadSaved();
+    });
+    els.savedStatus.appendChild(line);
+    els.savedStatus.appendChild(retry);
+    els.savedCount.textContent = "—";
+  }
+
+  function loadSaved() {
+    invoke({ action: "list" }).then(function (answer) {
+      state.palettes = answer.palettes || [];
+      state.savedFailed = false;
+      renderSaved();
+    }).catch(function (error) {
+      state.palettes = null;
+      renderSavedError("没能读取收藏：" + messageOf(error, "未知错误"));
+    });
+  }
+
+  // --- save dialog --------------------------------------------------------
+
+  function openSave(hexes, suggested) {
+    pendingSave = { colors: hexes.slice(), suggested: suggested };
+    saving = false;
+    els.saveConfirm.disabled = false;
+    els.saveError.hidden = true;
+    els.saveName.value = "";
+    els.saveName.placeholder = suggested;
+    els.saveHint.textContent = hexes.length + " 个颜色 · 存进扩展的私有目录，最多 200 套。";
+    els.savePreview.textContent = "";
+    hexes.forEach(function (hex) {
+      var chip = document.createElement("span");
+      chip.style.background = hex;
+      els.savePreview.appendChild(chip);
+    });
+    if (!els.dialog.open) els.dialog.showModal();
+    els.saveName.focus();
+  }
+
+  function submitSave(event) {
+    event.preventDefault();
+    if (!pendingSave || saving) return;
+    var name = els.saveName.value.trim() || pendingSave.suggested;
+    saving = true;
+    els.saveConfirm.disabled = true;
+    els.saveError.hidden = true;
+    invoke({ action: "save", name: name, colors: pendingSave.colors }).then(function (answer) {
+      saving = false;
+      els.saveConfirm.disabled = false;
+      els.dialog.close();
+      showToast("已保存「" + answer.palette.name + "」");
+      loadSaved();
+    }).catch(function (error) {
+      saving = false;
+      els.saveConfirm.disabled = false;
+      els.saveError.textContent = messageOf(error, "没能保存");
+      els.saveError.hidden = false;
+    });
+  }
+
+  // --- tabs ---------------------------------------------------------------
+
+  function selectTab(name) {
+    state.tab = name;
+    TABS.forEach(function (key) {
+      var tab = document.getElementById("tab-" + key);
+      var panel = document.getElementById("panel-" + key);
+      var active = key === name;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+      panel.hidden = !active;
+    });
+  }
+
+  // --- wiring -------------------------------------------------------------
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-icon]"), function (element) {
+    element.insertBefore(icon(element.dataset.icon), element.firstChild);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-format]"), function (element) {
+    element.addEventListener("click", function () {
+      state.format = element.dataset.format;
+      Array.prototype.forEach.call(document.querySelectorAll("[data-format]"), function (other) {
+        other.setAttribute("aria-pressed", String(other === element));
+      });
+    });
+  });
+
+  els.tabs.addEventListener("click", function (event) {
+    var tab = event.target.closest("[data-tab]");
+    if (tab) selectTab(tab.dataset.tab);
+  });
+
+  els.tabs.addEventListener("keydown", function (event) {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
+    var index = TABS.indexOf(state.tab);
+    index = (index + (event.key === "ArrowRight" ? 1 : -1) + TABS.length) % TABS.length;
+    selectTab(TABS[index]);
+    document.getElementById("tab-" + TABS[index]).focus();
+  });
+
+  els.dayPrev.addEventListener("click", function () { loadDay(shiftKey(state.date, -1)); });
+  els.dayNext.addEventListener("click", function () { loadDay(shiftKey(state.date, 1)); });
+  els.dayToday.addEventListener("click", function () { loadDay(state.today); });
+
+  els.dayCopy.addEventListener("click", function () {
+    if (!state.day) return;
+    copyText(paletteText(state.day.swatches, state.day.date + " · " + state.day.weekday), "整套");
+  });
+
+  els.daySave.addEventListener("click", function () {
+    if (!state.day) return;
+    openSave(state.day.swatches.map(function (swatch) { return swatch.hex; }),
+      monthDay(state.day.date) + " " + state.day.swatches[0].name);
+  });
+
+  els.wellInput.addEventListener("input", function () {
+    var hex = normalizeHex(els.wellInput.value);
+    if (!hex) return;
+    els.hexInput.removeAttribute("aria-invalid");
+    els.hexInput.value = hex;
+    setPickerHex(hex, true);
+  });
+
+  els.hexInput.addEventListener("input", function () {
+    var raw = els.hexInput.value;
+    var hex = normalizeHex(raw);
+    if (!hex) {
+      if (raw.replace("#", "").length >= 6) els.hexInput.setAttribute("aria-invalid", "true");
+      return;
+    }
+    els.hexInput.removeAttribute("aria-invalid");
+    if (hex === state.picked.hex) return;
+    setPickerHex(hex, true);
+  });
+
+  els.hexInput.addEventListener("blur", function () {
+    var hex = normalizeHex(els.hexInput.value);
+    els.hexInput.removeAttribute("aria-invalid");
+    els.hexInput.value = hex || state.picked.hex;
+  });
+
+  els.stepCount.addEventListener("change", function () {
+    state.picked.count = Number(els.stepCount.value) || 9;
+    loadRamp();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-readout]"), function (element) {
+    element.addEventListener("click", function () {
+      var value = element.dataset.readout === "rgb" ? els.readoutRgb.textContent : els.readoutHsl.textContent;
+      if (value && value !== "—") copyText(value, value);
+    });
+  });
+
+  els.rampCopy.addEventListener("click", function () {
+    if (!state.picked.ramp.length) return;
+    var title = "色阶 · " + state.picked.ramp.length + " 阶";
+    var text;
+    if (state.format === "css") {
+      text = state.picked.ramp.map(function (swatch, index) {
+        return "--step-" + (index + 1) + ": " + swatch.hex + ";";
+      }).join("\n");
+    } else {
+      text = state.picked.ramp.map(formatSwatch).join("\n");
+    }
+    copyText(text, "色阶");
+  });
+
+  els.rampSave.addEventListener("click", function () {
+    if (!state.picked.ramp.length || !state.picked.base) return;
+    openSave(state.picked.ramp.map(function (swatch) { return swatch.hex; }),
+      state.picked.base.name + " 色阶");
+  });
+
+  els.saveForm.addEventListener("submit", submitSave);
+  els.saveCancel.addEventListener("click", function () { els.dialog.close(); });
+  els.dialog.addEventListener("close", function () {
+    pendingSave = null;
+    els.saveError.hidden = true;
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") return;
+    if (els.dialog.open) return; // the dialog closes itself
+    post({ v: 1, type: "close" });
+  });
+
+  // --- midnight -----------------------------------------------------------
+
+  function scheduleMidnight() {
+    clearTimeout(midnightTimer);
+    var now = new Date();
+    var next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 3);
+    midnightTimer = setTimeout(function () {
+      rollOverDay();
+      scheduleMidnight();
+    }, Math.max(1000, next.getTime() - now.getTime()));
+  }
+
+  function rollOverDay() {
+    var today = todayKey();
+    if (today === state.today) return;
+    var wasToday = state.date === state.today;
+    state.today = today;
+    renderAlmanac();
+    els.almanacDot.style.background = "";
+    if (wasToday) loadDay(today);
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") rollOverDay();
+  });
+
+  // --- boot ---------------------------------------------------------------
+
+  state.today = todayKey();
+  state.date = state.today;
+  renderAlmanac();
+  els.well.style.background = state.picked.hex;
+  selectTab("daily");
+  post({ v: 1, type: "ready" });
+  loadDay(state.date);
+  loadSaved();
+  loadRamp();
+  scheduleMidnight();
+})();
+</script>
+</body>
+</html>

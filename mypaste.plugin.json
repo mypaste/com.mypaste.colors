@@ -1,0 +1,38 @@
+{
+  "manifestVersion": 3,
+  "kind": "ui",
+  "id": "com.mypaste.colors",
+  "name": "配色",
+  "version": "1.0.0",
+  "description": "每天一款配色，也可以从任意颜色生成深浅色阶；收藏的配色留在扩展自己的私有目录，复制走宿主剪贴板。",
+  "capabilities": [
+    "storage.plugin"
+  ],
+  "runtime": {
+    "protocolVersion": 2,
+    "mode": "command",
+    "entrypoint": "colors"
+  },
+  "menus": [
+    {
+      "id": "colors.panel",
+      "title": "配色",
+      "entry": "panel.html",
+      "order": 56,
+      "icon": "chart"
+    }
+  ],
+  "commands": [
+    {
+      "id": "colors.request",
+      "title": "配色操作",
+      "description": "生成某一天的配色、从一种颜色生成色阶，列出、保存或删除收藏的配色。",
+      "capabilities": [
+        "storage.plugin"
+      ],
+      "output": [
+        "text"
+      ]
+    }
+  ]
+}
