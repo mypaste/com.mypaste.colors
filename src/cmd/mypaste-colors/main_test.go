@@ -10,20 +10,22 @@ import (
 )
 
 type memoryStorage struct {
-	data    []byte
-	present bool
+	files map[string][]byte
 }
 
-func (m *memoryStorage) Read(context.Context, string) ([]byte, bool, error) {
-	if !m.present {
+func (m *memoryStorage) Read(_ context.Context, key string) ([]byte, bool, error) {
+	data, present := m.files[key]
+	if !present {
 		return nil, false, nil
 	}
-	return append([]byte(nil), m.data...), true, nil
+	return append([]byte(nil), data...), true, nil
 }
 
-func (m *memoryStorage) Write(_ context.Context, _ string, data []byte) error {
-	m.present = true
-	m.data = append([]byte(nil), data...)
+func (m *memoryStorage) Write(_ context.Context, key string, data []byte) error {
+	if m.files == nil {
+		m.files = make(map[string][]byte)
+	}
+	m.files[key] = append([]byte(nil), data...)
 	return nil
 }
 
@@ -85,6 +87,48 @@ func TestRampRequest(t *testing.T) {
 	reply := parseAnswer(t, output)
 	if !reply.OK || len(reply.Swatches) != 9 || reply.Swatches[4].Hex != "#3A7BFF" {
 		t.Fatalf("%#v", reply)
+	}
+}
+
+func TestCurrentRequestRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	palettes := store.New(&memoryStorage{})
+
+	output, err := run(ctx, palettes, invocationOf(`{"action":"current"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if empty := parseAnswer(t, output); !empty.OK || empty.Current != nil {
+		t.Fatalf("%#v", empty)
+	}
+
+	output, err = run(ctx, palettes, invocationOf(`{"action":"remember","hex":"3a7bff"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	remembered := parseAnswer(t, output)
+	if !remembered.OK || remembered.Current == nil || remembered.Current.Hex != "#3A7BFF" {
+		t.Fatalf("%#v", remembered)
+	}
+	if remembered.Current.At == "" {
+		t.Fatalf("remembered colour has no timestamp: %#v", remembered.Current)
+	}
+
+	output, err = run(ctx, palettes, invocationOf(`{"action":"current"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	current := parseAnswer(t, output)
+	if !current.OK || current.Current == nil || current.Current.Hex != "#3A7BFF" {
+		t.Fatalf("%#v", current)
+	}
+
+	output, err = run(ctx, palettes, invocationOf(`{"action":"remember","hex":"blue"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refused := parseAnswer(t, output); refused.OK || refused.Current != nil {
+		t.Fatalf("%#v", refused)
 	}
 }
 

@@ -11,31 +11,38 @@ import (
 )
 
 type fakeStorage struct {
-	data     []byte
-	present  bool
+	files    map[string][]byte
 	readErr  error
 	writeErr error
 	writes   int
 }
 
-func (f *fakeStorage) Read(context.Context, string) ([]byte, bool, error) {
+func (f *fakeStorage) Read(_ context.Context, key string) ([]byte, bool, error) {
 	if f.readErr != nil {
 		return nil, false, f.readErr
 	}
-	if !f.present {
+	data, present := f.files[key]
+	if !present {
 		return nil, false, nil
 	}
-	return append([]byte(nil), f.data...), true, nil
+	return append([]byte(nil), data...), true, nil
 }
 
-func (f *fakeStorage) Write(_ context.Context, _ string, data []byte) error {
+func (f *fakeStorage) Write(_ context.Context, key string, data []byte) error {
 	if f.writeErr != nil {
 		return f.writeErr
 	}
 	f.writes++
-	f.present = true
-	f.data = append([]byte(nil), data...)
+	if f.files == nil {
+		f.files = make(map[string][]byte)
+	}
+	f.files[key] = append([]byte(nil), data...)
 	return nil
+}
+
+// fakeWith returns storage holding one document under key.
+func fakeWith(key string, data []byte) *fakeStorage {
+	return &fakeStorage{files: map[string][]byte{key: append([]byte(nil), data...)}}
 }
 
 func newTestStore(storage *fakeStorage, now time.Time) *Store {
@@ -171,7 +178,7 @@ func TestSaveStopsAtTheCap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	store := newTestStore(&fakeStorage{data: data, present: true}, time.Unix(0, 0))
+	store := newTestStore(fakeWith(Key, data), time.Unix(0, 0))
 	if _, err := store.Save(ctx, "新的", []string{"#111111", "#222222"}); err == nil {
 		t.Fatal("saved past the cap")
 	}
@@ -179,7 +186,7 @@ func TestSaveStopsAtTheCap(t *testing.T) {
 
 func TestCorruptDocumentIsRefusedNotOverwritten(t *testing.T) {
 	ctx := context.Background()
-	storage := &fakeStorage{data: []byte("{not json"), present: true}
+	storage := fakeWith(Key, []byte("{not json"))
 	store := newTestStore(storage, time.Unix(0, 0))
 	if _, err := store.List(ctx); err == nil {
 		t.Fatal("listed a corrupt document")
@@ -194,7 +201,7 @@ func TestCorruptDocumentIsRefusedNotOverwritten(t *testing.T) {
 
 func TestFutureVersionIsRefused(t *testing.T) {
 	ctx := context.Background()
-	storage := &fakeStorage{data: []byte(`{"version":99,"palettes":[]}`), present: true}
+	storage := fakeWith(Key, []byte(`{"version":99,"palettes":[]}`))
 	if _, err := newTestStore(storage, time.Unix(0, 0)).List(ctx); err == nil {
 		t.Fatal("read a document from a newer version")
 	}
@@ -209,6 +216,82 @@ func TestStorageErrorsReachTheCaller(t *testing.T) {
 	store = newTestStore(&fakeStorage{writeErr: errors.New("配额已满")}, time.Unix(0, 0))
 	if _, err := store.Save(ctx, "名字", []string{"#111111", "#222222"}); err == nil ||
 		!strings.Contains(err.Error(), "配额已满") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestCurrentMemoryStartsEmpty(t *testing.T) {
+	ctx := context.Background()
+	current, present, err := newTestStore(&fakeStorage{}, time.Unix(0, 0)).Current(ctx)
+	if err != nil || present || current.Hex != "" {
+		t.Fatalf("current = %#v present=%v err=%v", current, present, err)
+	}
+}
+
+func TestRememberNormalizesAndSurvivesTheProcess(t *testing.T) {
+	ctx := context.Background()
+	storage := &fakeStorage{}
+	fixed := time.Date(2026, 11, 25, 10, 14, 0, 0, time.UTC)
+	store := newTestStore(storage, fixed)
+
+	remembered, err := store.Remember(ctx, " abc ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if remembered.Hex != "#AABBCC" || remembered.At != fixed.Format(time.RFC3339) {
+		t.Fatalf("remembered = %#v", remembered)
+	}
+
+	// A second store over the same private directory reads the same memory.
+	current, present, err := newTestStore(storage, fixed).Current(ctx)
+	if err != nil || !present {
+		t.Fatalf("present=%v err=%v", present, err)
+	}
+	if current != remembered {
+		t.Fatalf("current = %#v, want %#v", current, remembered)
+	}
+}
+
+func TestRememberRefusesAnInvalidColour(t *testing.T) {
+	ctx := context.Background()
+	storage := &fakeStorage{}
+	if _, err := newTestStore(storage, time.Unix(0, 0)).Remember(ctx, "#12345"); err == nil {
+		t.Fatal("remembered an invalid colour")
+	}
+	if storage.writes != 0 {
+		t.Fatalf("wrote %d times", storage.writes)
+	}
+}
+
+func TestADamagedMemoryIsAbsentNotFatal(t *testing.T) {
+	ctx := context.Background()
+	for name, data := range map[string]string{
+		"corrupt":  "{not json",
+		"future":   `{"version":99,"hex":"#AABBCC"}`,
+		"no hex":   `{"version":1,"hex":"nope"}`,
+		"no field": `{"version":1}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			storage := fakeWith(CurrentKey, []byte(data))
+			if _, present, err := newTestStore(storage, time.Unix(0, 0)).Current(ctx); err != nil || present {
+				t.Fatalf("present=%v err=%v", present, err)
+			}
+			// The next pick replaces the unusable memory instead of failing.
+			if _, err := newTestStore(storage, time.Unix(0, 0)).Remember(ctx, "#112233"); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestCurrentStorageErrorsReachTheCaller(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(&fakeStorage{readErr: errors.New("未授权")}, time.Unix(0, 0))
+	if _, _, err := store.Current(ctx); err == nil || !strings.Contains(err.Error(), "未授权") {
+		t.Fatalf("err = %v", err)
+	}
+	store = newTestStore(&fakeStorage{writeErr: errors.New("配额已满")}, time.Unix(0, 0))
+	if _, err := store.Remember(ctx, "#112233"); err == nil || !strings.Contains(err.Error(), "配额已满") {
 		t.Fatalf("err = %v", err)
 	}
 }

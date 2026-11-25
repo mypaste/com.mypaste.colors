@@ -359,6 +359,8 @@
     gap: 18px;
     padding: 0;
   }
+  .picker-well { display: grid; gap: 6px; align-content: start; justify-items: start; }
+  .picker-well .field-label { margin-bottom: 0; }
   .well {
     position: relative;
     width: 176px;
@@ -678,10 +680,13 @@
 
   <section class="panel" id="panel-picker" role="tabpanel" aria-labelledby="tab-picker" hidden>
     <div class="picker">
-      <label class="well" id="well" title="打开系统取色器">
-        <input type="color" id="well-input" value="#3a7bff" aria-label="选择颜色">
-        <span class="well-label" aria-hidden="true">取色</span>
-      </label>
+      <div class="picker-well">
+        <span class="field-label">当前颜色</span>
+        <label class="well" id="well" title="打开系统取色器">
+          <input type="color" id="well-input" value="#3a7bff" aria-label="当前颜色，点击选择颜色">
+          <span class="well-label" aria-hidden="true">取色</span>
+        </label>
+      </div>
       <div class="picker-fields">
         <label class="field">
           <span class="field-label">HEX</span>
@@ -691,7 +696,7 @@
           <button class="readout" type="button" data-readout="rgb"><span>RGB</span><code id="readout-rgb">—</code></button>
           <button class="readout" type="button" data-readout="hsl"><span>HSL</span><code id="readout-hsl">—</code></button>
         </div>
-        <p class="hint" id="hex-hint">点色块打开系统取色器，可以吸取屏幕上的任意颜色。</p>
+        <p class="hint" id="hex-hint">当前颜色取自这里最近一次复制或选取的颜色；点色块打开系统取色器。</p>
       </div>
     </div>
     <div class="card">
@@ -783,9 +788,10 @@
   var pendingSave = null;
   var saving = false;
   var pickerSeeded = false;
+  var remembered = "";
 
   var state = {
-    tab: "daily",
+    tab: "picker",
     format: "hex",
     today: "",
     date: "",
@@ -1017,13 +1023,18 @@
   function copyText(text, label) {
     return hostCopy(text).then(function () {
       showToast("已复制" + (label ? " " + label : ""));
+      return true;
     }).catch(function (error) {
       showToast("复制失败：" + messageOf(error, "剪贴板不可用"));
+      return false;
     });
   }
 
   function copySwatch(swatch, index) {
-    copyText(state.format === "css" ? cssLine(swatch, index) : formatSwatch(swatch), swatch.hex);
+    var text = state.format === "css" ? cssLine(swatch, index) : formatSwatch(swatch);
+    copyText(text, swatch.hex).then(function (copied) {
+      if (copied) remember(swatch.hex);
+    });
   }
 
   // --- daily --------------------------------------------------------------
@@ -1240,6 +1251,38 @@
 
   // --- picker -------------------------------------------------------------
 
+  // --- current colour -----------------------------------------------------
+
+  // The picker opens on the colour this page last handed over, so the menu's
+  // chord lands on the reader's current colour instead of the day's first
+  // swatch. The runtime keeps that memory in the package's private storage; a
+  // missing or unreadable one is not an error and falls back to today.
+  function seedCurrent(force) {
+    return invoke({ action: "current" }).then(function (answer) {
+      var current = answer && answer.current;
+      if (!current || !current.hex) return false;
+      remembered = current.hex;
+      if (force || !state.picked.touched) {
+        pickerSeeded = true;
+        setPickerHex(current.hex, false);
+      }
+      return true;
+    }).catch(function () {
+      return false;
+    });
+  }
+
+  function remember(hex) {
+    if (!hex || hex === remembered) return;
+    remembered = hex;
+    invoke({ action: "remember", hex: hex }).then(function (answer) {
+      if (answer && answer.current) remembered = answer.current.hex;
+    }).catch(function () {
+      // A failed memory write costs the next open its start colour, nothing else.
+      remembered = "";
+    });
+  }
+
   function adoptTodayColour(hex) {
     if (state.picked.touched) return;
     state.picked.hex = hex;
@@ -1313,6 +1356,7 @@
       renderRamp();
       els.rampCopy.disabled = false;
       els.rampSave.disabled = false;
+      if (state.picked.touched) remember(state.picked.base.hex);
     }).catch(function (error) {
       if (token !== state.picked.token) return;
       state.picked.ramp = [];
@@ -1329,6 +1373,9 @@
     if (touched) state.picked.touched = true;
     els.well.style.background = hex;
     els.wellInput.value = hex.toLowerCase();
+    // A scale still in flight belongs to the colour before this one; without
+    // this it could land during the debounce and put that colour back.
+    state.picked.token += 1;
     clearTimeout(rampTimer);
     rampTimer = setTimeout(loadRamp, 120);
   }
@@ -1606,7 +1653,10 @@
   Array.prototype.forEach.call(document.querySelectorAll("[data-readout]"), function (element) {
     element.addEventListener("click", function () {
       var value = element.dataset.readout === "rgb" ? els.readoutRgb.textContent : els.readoutHsl.textContent;
-      if (value && value !== "—") copyText(value, value);
+      if (!value || value === "—") return;
+      copyText(value, value).then(function (copied) {
+        if (copied) remember(state.picked.hex);
+      });
     });
   });
 
@@ -1667,7 +1717,13 @@
   }
 
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") rollOverDay();
+    if (document.visibilityState !== "visible") return;
+    rollOverDay();
+    // The menu window is hidden, not rebuilt (D-1220), so every reopen re-reads
+    // the current colour and lands on the picker: one chord, one step.
+    if (els.dialog.open) return;
+    selectTab("picker");
+    seedCurrent(true);
   });
 
   // --- boot ---------------------------------------------------------------
@@ -1676,11 +1732,13 @@
   state.date = state.today;
   renderAlmanac();
   els.well.style.background = state.picked.hex;
-  selectTab("daily");
+  selectTab("picker");
   post({ v: 1, type: "ready" });
   loadDay(state.date);
   loadSaved();
-  loadRamp();
+  seedCurrent(false).then(function (seeded) {
+    if (!seeded && !pickerSeeded) loadRamp();
+  });
   scheduleMidnight();
 })();
 </script>

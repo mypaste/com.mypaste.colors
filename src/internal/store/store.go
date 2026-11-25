@@ -18,10 +18,15 @@ import (
 )
 
 const (
-	// Key is the single object this extension keeps. One document means one
-	// read and one write per change, and a palette list that can be copied
-	// out of the plugin's private directory as-is.
+	// Key is the saved palettes. One document means one read and one write per
+	// change, and a palette list that can be copied out of the plugin's private
+	// directory as-is.
 	Key = "palettes.json"
+	// CurrentKey remembers the colour the page is working with, so the panel can
+	// open on it instead of the day's palette. It is convenience state, not a
+	// saved palette: the two stay in separate documents so neither a damaged
+	// memory nor a full palette list can take the other down.
+	CurrentKey = "current.json"
 	// MaxPalettes bounds the list; beyond it the page would be a scroll no
 	// one finishes, so saving stops with a clear message.
 	MaxPalettes = 200
@@ -33,7 +38,15 @@ const (
 	MaxColors = 12
 
 	documentVersion = 1
+	currentVersion  = 1
 )
+
+// Current is the colour the page last handed over or picked, with the moment
+// it was recorded.
+type Current struct {
+	Hex string `json:"hex"`
+	At  string `json:"at"`
+}
 
 // Palette is one saved palette. Colors are canonical uppercase #RRGGBB.
 type Palette struct {
@@ -126,6 +139,53 @@ func (s *Store) Delete(ctx context.Context, id string) error {
 	}
 	doc.Palettes = append(doc.Palettes[:found], doc.Palettes[found+1:]...)
 	return s.persist(ctx, doc)
+}
+
+type currentDocument struct {
+	Version int    `json:"version"`
+	Hex     string `json:"hex"`
+	At      string `json:"at"`
+}
+
+// Current returns the remembered colour. A missing, unreadable or outdated
+// memory is not an error: the page simply falls back to the day's first
+// swatch, so one convenience file must never block the picker.
+func (s *Store) Current(ctx context.Context) (Current, bool, error) {
+	raw, present, err := s.storage.Read(ctx, CurrentKey)
+	if err != nil {
+		return Current{}, false, fmt.Errorf("无法读取当前颜色：%w", err)
+	}
+	if !present {
+		return Current{}, false, nil
+	}
+	var doc currentDocument
+	if err := json.Unmarshal(raw, &doc); err != nil || doc.Version > currentVersion {
+		return Current{}, false, nil
+	}
+	hex, ok := color.NormalizeHex(doc.Hex)
+	if !ok {
+		return Current{}, false, nil
+	}
+	return Current{Hex: hex, At: doc.At}, true, nil
+}
+
+// Remember records the colour the page is working with.
+func (s *Store) Remember(ctx context.Context, value string) (Current, error) {
+	hex, ok := color.NormalizeHex(value)
+	if !ok {
+		return Current{}, errors.New("颜色值应为 #RRGGBB")
+	}
+	current := Current{Hex: hex, At: s.now().Format(time.RFC3339)}
+	raw, err := json.Marshal(currentDocument{
+		Version: currentVersion, Hex: current.Hex, At: current.At,
+	})
+	if err != nil {
+		return Current{}, err
+	}
+	if err := s.storage.Write(ctx, CurrentKey, raw); err != nil {
+		return Current{}, fmt.Errorf("无法记住当前颜色：%w", err)
+	}
+	return current, nil
 }
 
 // CleanName trims and validates the reader's name.

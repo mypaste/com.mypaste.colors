@@ -18,7 +18,7 @@ import (
 )
 
 // Version is the extension version written into archive manifests.
-const Version = "1.1.0"
+const Version = "1.2.0"
 
 const commandRequest = "colors.request"
 
@@ -70,6 +70,13 @@ type paletteView struct {
 	Swatches  []color.Swatch `json:"swatches"`
 }
 
+// currentView is the colour the page is working with, as the page reads it
+// back on open.
+type currentView struct {
+	Hex string `json:"hex"`
+	At  string `json:"at,omitempty"`
+}
+
 // answer carries the page's data. Its own ok and message let the page tell a
 // validation refusal ("那个名字太长了") from a host failure.
 type answer struct {
@@ -81,6 +88,7 @@ type answer struct {
 	Palettes []paletteView  `json:"palettes,omitempty"`
 	Palette  *paletteView   `json:"palette,omitempty"`
 	ID       string         `json:"id,omitempty"`
+	Current  *currentView   `json:"current,omitempty"`
 }
 
 func main() {
@@ -141,6 +149,22 @@ func run(ctx context.Context, palettes *store.Store, call invocation) (string, e
 			break
 		}
 		reply.Swatches = swatches
+	case "current":
+		current, present, err := palettes.Current(ctx)
+		if err != nil {
+			reply.OK, reply.Error = false, err.Error()
+			break
+		}
+		if present {
+			reply.Current = &currentView{Hex: current.Hex, At: current.At}
+		}
+	case "remember":
+		current, err := palettes.Remember(ctx, asked.Hex)
+		if err != nil {
+			reply.OK, reply.Error = false, err.Error()
+			break
+		}
+		reply.Current = &currentView{Hex: current.Hex, At: current.At}
 	case "list":
 		saved, err := palettes.List(ctx)
 		if err != nil {
