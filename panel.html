@@ -143,8 +143,10 @@
   }
 
   .day-card {
-    flex: 1;
-    min-height: 196px;
+    /* The strip keeps one readable height; the month overview below takes the
+       rest of the canvas, so the five colours never stretch into a wall. */
+    flex: none;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     border: 1px solid var(--line);
@@ -181,15 +183,15 @@
   }
   .link-btn:hover { text-decoration: underline; }
 
-  .day-strip { flex: 1; display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 1fr)); }
+  .day-strip { flex: none; display: grid; grid-template-columns: repeat(var(--count, 5), minmax(0, 1fr)); }
   .day-swatch {
     position: relative;
     appearance: none;
     border: 0;
     border-radius: 0;
     margin: 0;
-    padding: 12px 12px 14px;
-    min-height: 152px;
+    padding: 12px 14px;
+    min-height: 132px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -205,7 +207,7 @@
   .day-swatch:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
   .day-status {
     grid-column: 1 / -1;
-    min-height: 168px;
+    min-height: 132px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -214,6 +216,81 @@
     padding: 24px 16px;
     text-align: center;
   }
+
+  /* The month overview: one raised card per day holding that day's five
+     colours, so the strip above can stay one readable height. */
+  .month-card {
+    flex: 1;
+    min-height: 196px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    padding: 9px 10px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface-solid);
+  }
+  .month-weekdays, .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .month-weekdays {
+    padding: 0 3px 5px;
+    color: var(--ink-soft);
+    font: 600 10px/1 var(--font-body);
+    letter-spacing: 0.12em;
+    text-align: center;
+  }
+  .month-grid { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); }
+  .month-grid[data-note="1"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .month-day {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    min-height: 0;
+    padding: 4px 5px 5px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    color: var(--ink-soft);
+    text-align: left;
+  }
+  .month-day:hover { border-color: var(--line-strong); }
+  .month-day:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .month-day[data-selected="true"] {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    background: var(--surface-solid);
+    color: var(--ink);
+  }
+  .month-day .num {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    min-height: 10px;
+    font: 600 10px/1 var(--font-body);
+    font-variant-numeric: tabular-nums;
+  }
+  .month-day[data-selected="true"] .num { color: var(--ink); }
+  .month-day .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .month-stripes {
+    flex: 1;
+    min-height: 10px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    border-radius: var(--radius-xs);
+    overflow: hidden;
+  }
+  .month-stripe { display: block; }
+  .month-blank { visibility: hidden; }
 
   .actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .actions.compact { margin-top: 12px; }
@@ -516,6 +593,13 @@
     .day-swatch .copy-mark { display: none; }
     .day-swatch .foot { margin-top: 0; margin-left: auto; flex-direction: row; align-items: baseline; gap: 10px; }
     .day-status { min-height: 140px; }
+    /* Seven columns still fit a narrow window; the rows keep a fixed height
+       and the page scrolls instead of squeezing the colours away. */
+    .month-card { flex: none; min-height: 0; }
+    .month-weekdays, .month-grid { gap: 3px; }
+    .month-grid { grid-auto-rows: 46px; }
+    .month-grid[data-note="1"] { min-height: 110px; }
+    .month-day { padding: 3px 4px 4px; }
     .picker { grid-template-columns: 1fr; }
     .well { width: 100%; height: 96px; min-height: 96px; }
     .picker-fields { grid-template-columns: 1fr; }
@@ -560,6 +644,12 @@
       </div>
       <div class="day-strip" id="day-strip" aria-live="polite"></div>
     </article>
+    <section class="month-card" aria-label="这个月的配色">
+      <div class="month-weekdays" aria-hidden="true">
+        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+      </div>
+      <div class="month-grid" id="month-grid"></div>
+    </section>
     <div class="actions">
       <div class="segmented" role="group" aria-label="复制格式">
         <button class="segment" type="button" data-format="hex" aria-pressed="true">HEX</button>
@@ -571,7 +661,7 @@
       <button class="btn" type="button" id="day-save" disabled>保存这套</button>
       <button class="btn primary" type="button" id="day-copy" data-icon="copy" disabled>复制这套</button>
     </div>
-    <p class="hint" style="margin-top: 8px">点任意色块复制它的颜色；明天 0 点自动换新。</p>
+    <p class="hint" style="margin-top: 8px">点任意色块复制它的颜色；在日历里点一天，翻到那天的配色。</p>
   </section>
 
   <section class="panel" id="panel-picker" role="tabpanel" aria-labelledby="tab-picker" hidden>
@@ -676,6 +766,7 @@
   var rampTimer = 0;
   var midnightTimer = 0;
   var dayToken = 0;
+  var monthToken = 0;
   var armed = null;
   var pendingSave = null;
   var saving = false;
@@ -687,6 +778,7 @@
     today: "",
     date: "",
     day: null,
+    month: { key: "", days: null },
     palettes: null,
     savedFailed: false,
     picked: { hex: "#3A7BFF", count: 9, ramp: [], base: null, touched: false, token: 0 }
@@ -704,6 +796,7 @@
     dayNext: document.getElementById("day-next"),
     dayToday: document.getElementById("day-today"),
     dayStrip: document.getElementById("day-strip"),
+    monthGrid: document.getElementById("month-grid"),
     daySave: document.getElementById("day-save"),
     dayCopy: document.getElementById("day-copy"),
     well: document.getElementById("well"),
@@ -994,10 +1087,116 @@
     }
   }
 
+  // --- month overview -----------------------------------------------------
+
+  function monthCell(day) {
+    var cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "month-day";
+    cell.dataset.date = day.date;
+    cell.setAttribute("aria-label", monthDay(day.date) + " " + day.weekday +
+      "，" + day.swatches[0].name + "，查看这一天的配色");
+
+    var num = document.createElement("span");
+    num.className = "num";
+    var label = document.createElement("span");
+    label.textContent = String(Number(day.date.slice(8)));
+    num.appendChild(label);
+    if (day.date === state.today) {
+      // A quiet dot marks today; the selected day is the cell with the ring.
+      var dot = document.createElement("span");
+      dot.className = "dot";
+      dot.setAttribute("aria-hidden", "true");
+      num.appendChild(dot);
+    }
+
+    var stripes = document.createElement("span");
+    stripes.className = "month-stripes";
+    stripes.setAttribute("aria-hidden", "true");
+    day.swatches.forEach(function (swatch) {
+      var stripe = document.createElement("span");
+      stripe.className = "month-stripe";
+      stripe.style.background = swatch.hex;
+      stripes.appendChild(stripe);
+    });
+
+    cell.appendChild(num);
+    cell.appendChild(stripes);
+    cell.addEventListener("click", function () { loadDay(day.date); });
+    return cell;
+  }
+
+  function markMonthSelection() {
+    Array.prototype.forEach.call(els.monthGrid.querySelectorAll(".month-day[data-date]"), function (cell) {
+      var selected = cell.dataset.date === state.date;
+      cell.dataset.selected = String(selected);
+      cell.setAttribute("aria-current", selected ? "date" : "false");
+    });
+  }
+
+  function renderMonthNote(text, withRetry) {
+    var grid = els.monthGrid;
+    grid.textContent = "";
+    grid.dataset.note = "1";
+    var note = document.createElement("p");
+    note.className = "hint";
+    note.textContent = text;
+    grid.appendChild(note);
+    if (withRetry) {
+      var retry = button("重试", "btn");
+      retry.addEventListener("click", function () {
+        state.month = { key: "", days: null };
+        loadMonth(state.date);
+      });
+      grid.appendChild(retry);
+    }
+  }
+
+  function renderMonth() {
+    var grid = els.monthGrid;
+    var days = state.month.days;
+    if (!days) {
+      renderMonthNote("正在生成这个月的配色…", false);
+      return;
+    }
+    grid.textContent = "";
+    delete grid.dataset.note;
+    // Monday first, like the weekday row above the grid.
+    var offset = (parseKey(days[0].date).getDay() + 6) % 7;
+    for (var blank = 0; blank < offset; blank++) {
+      var filler = document.createElement("span");
+      filler.className = "month-day month-blank";
+      grid.appendChild(filler);
+    }
+    days.forEach(function (day) { grid.appendChild(monthCell(day)); });
+    markMonthSelection();
+  }
+
+  function loadMonth(key) {
+    var wanted = key.slice(0, 7);
+    if (state.month.key === wanted && state.month.days) return;
+    var token = ++monthToken;
+    state.month = { key: wanted, days: null };
+    renderMonth();
+    invoke({ action: "month", date: key }).then(function (answer) {
+      if (token !== monthToken) return;
+      if (!answer.month || !answer.month.days || !answer.month.days.length) {
+        throw new Error("这个月的配色没有返回");
+      }
+      state.month = { key: wanted, days: answer.month.days };
+      renderMonth();
+    }).catch(function (error) {
+      if (token !== monthToken) return;
+      renderMonthNote(messageOf(error, "这个月的配色没有返回"), true);
+    });
+  }
+
   function loadDay(key) {
     var token = ++dayToken;
     state.date = key;
     state.day = null;
+    loadMonth(key);
+    markMonthSelection();
     els.dayCopy.disabled = true;
     els.daySave.disabled = true;
     els.dayLabel.textContent = monthDay(key);
@@ -1444,6 +1643,7 @@
     var wasToday = state.date === state.today;
     state.today = today;
     renderAlmanac();
+    if (state.month.days) renderMonth();
     els.almanacDot.style.background = "";
     if (wasToday) loadDay(today);
   }

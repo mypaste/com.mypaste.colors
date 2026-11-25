@@ -18,7 +18,7 @@ import (
 )
 
 // Version is the extension version written into archive manifests.
-const Version = "1.0.1"
+const Version = "1.0.2"
 
 const commandRequest = "colors.request"
 
@@ -76,6 +76,7 @@ type answer struct {
 	OK       bool           `json:"ok"`
 	Error    string         `json:"error,omitempty"`
 	Day      *color.Day     `json:"day,omitempty"`
+	Month    *color.Month   `json:"month,omitempty"`
 	Swatches []color.Swatch `json:"swatches,omitempty"`
 	Palettes []paletteView  `json:"palettes,omitempty"`
 	Palette  *paletteView   `json:"palette,omitempty"`
@@ -126,6 +127,13 @@ func run(ctx context.Context, palettes *store.Store, call invocation) (string, e
 			break
 		}
 		reply.Day = &day
+	case "month":
+		month, err := color.MonthOf(asked.Date)
+		if err != nil {
+			reply.OK, reply.Error = false, err.Error()
+			break
+		}
+		reply.Month = &month
 	case "ramp":
 		swatches, err := color.Ramp(asked.Hex, asked.Count)
 		if err != nil {

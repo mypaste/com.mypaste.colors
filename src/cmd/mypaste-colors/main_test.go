@@ -58,6 +58,24 @@ func TestDailyRequest(t *testing.T) {
 	}
 }
 
+func TestMonthRequest(t *testing.T) {
+	output, err := run(context.Background(), store.New(&memoryStorage{}),
+		invocationOf(`{"action":"month","date":"2026-11-25"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	reply := parseAnswer(t, output)
+	if !reply.OK || reply.Month == nil {
+		t.Fatalf("%#v", reply)
+	}
+	if reply.Month.Month != "2026-11" || len(reply.Month.Days) != 30 {
+		t.Fatalf("month = %#v", reply.Month)
+	}
+	if last := reply.Month.Days[29]; last.Date != "2026-11-30" || len(last.Swatches) != 5 {
+		t.Fatalf("last day = %#v", last)
+	}
+}
+
 func TestRampRequest(t *testing.T) {
 	output, err := run(context.Background(), store.New(&memoryStorage{}),
 		invocationOf(`{"action":"ramp","hex":"#3A7BFF","count":9}`))

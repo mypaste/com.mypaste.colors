@@ -32,6 +32,14 @@ type Day struct {
 	Swatches []Swatch `json:"swatches"`
 }
 
+// Month is one calendar month's palettes in day order. The page draws its
+// overview from it, so a day reached on the grid has the same colours as one
+// reached with the arrows.
+type Month struct {
+	Month string `json:"month"`
+	Days  []Day  `json:"days"`
+}
+
 var weekdayNames = [...]string{
 	"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六",
 }
@@ -121,6 +129,25 @@ func Daily(date string) (Day, error) {
 		Weekday:  weekdayNames[parsed.Weekday()],
 		Swatches: swatches,
 	}, nil
+}
+
+// MonthOf returns every day's palette in the month that contains date, so the
+// page can draw the whole month without asking one day at a time.
+func MonthOf(date string) (Month, error) {
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil || parsed.Format("2006-01-02") != date {
+		return Month{}, errors.New("日期格式应为 YYYY-MM-DD")
+	}
+	first := time.Date(parsed.Year(), parsed.Month(), 1, 0, 0, 0, 0, time.UTC)
+	days := make([]Day, 0, 31)
+	for day := first; day.Month() == first.Month(); day = day.AddDate(0, 0, 1) {
+		palette, err := Daily(day.Format("2006-01-02"))
+		if err != nil {
+			return Month{}, err
+		}
+		days = append(days, palette)
+	}
+	return Month{Month: first.Format("2006-01"), Days: days}, nil
 }
 
 // Ramp returns the tint/shade scale around one colour. The picked colour is

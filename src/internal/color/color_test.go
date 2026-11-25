@@ -1,6 +1,7 @@
 package color
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -96,6 +97,58 @@ func TestDailyVariesAcrossDays(t *testing.T) {
 	}
 	if len(seen) < 60 {
 		t.Fatalf("only %d distinct main colours in 90 days", len(seen))
+	}
+}
+
+func TestMonthCoversEveryDayInOrder(t *testing.T) {
+	cases := []struct {
+		date  string
+		month string
+		days  int
+	}{
+		{"2026-11-15", "2026-11", 30},
+		{"2024-02-29", "2024-02", 29},
+		{"2026-02-01", "2026-02", 28},
+		{"2026-12-31", "2026-12", 31},
+	}
+	for _, test := range cases {
+		got, err := MonthOf(test.date)
+		if err != nil {
+			t.Fatalf("%s: %v", test.date, err)
+		}
+		if got.Month != test.month {
+			t.Fatalf("%s: month = %q", test.date, got.Month)
+		}
+		if len(got.Days) != test.days {
+			t.Fatalf("%s: %d days, want %d", test.date, len(got.Days), test.days)
+		}
+		for index, day := range got.Days {
+			wantDate := fmt.Sprintf("%s-%02d", test.month, index+1)
+			if day.Date != wantDate {
+				t.Fatalf("%s: day %d is %q, want %q", test.date, index, day.Date, wantDate)
+			}
+			// The grid must never disagree with the day the arrows show.
+			want, err := Daily(wantDate)
+			if err != nil {
+				t.Fatalf("%s: %v", wantDate, err)
+			}
+			if day.Weekday != want.Weekday || len(day.Swatches) != len(want.Swatches) {
+				t.Fatalf("%s does not match Daily: %#v vs %#v", wantDate, day, want)
+			}
+			for at := range want.Swatches {
+				if day.Swatches[at] != want.Swatches[at] {
+					t.Fatalf("%s swatch %d differs from Daily", wantDate, at)
+				}
+			}
+		}
+	}
+}
+
+func TestMonthRejectsMalformedDates(t *testing.T) {
+	for _, value := range []string{"", "2026-13-01", "2026-02-30", "26-11", "2026-1-5"} {
+		if _, err := MonthOf(value); err == nil {
+			t.Fatalf("MonthOf(%q) accepted a malformed date", value)
+		}
 	}
 }
 
