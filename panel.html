@@ -217,26 +217,31 @@
     text-align: center;
   }
 
-  /* The month overview: one raised card per day holding that day's five
-     colours, so the strip above can stay one readable height. */
-  .month-card {
+  /* The month overview is a calendar, not a stack of cards: the day numbers
+     sit on the page surface, only the palette bands carry colour, and nothing
+     here draws a frame or a corner. */
+  .month {
     flex: 1;
-    min-height: 196px;
-    margin-top: 10px;
+    min-height: 190px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
     display: flex;
     flex-direction: column;
-    padding: 9px 10px 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    background: var(--surface-solid);
+  }
+  .month-title {
+    margin: 0 0 8px;
+    color: var(--ink-soft);
+    font: 600 10px/1 var(--font-body);
+    letter-spacing: 0.14em;
   }
   .month-weekdays, .month-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 5px;
+    gap: 6px 8px;
   }
   .month-weekdays {
-    padding: 0 3px 5px;
+    padding: 0 1px 7px;
     color: var(--ink-soft);
     font: 600 10px/1 var(--font-body);
     letter-spacing: 0.12em;
@@ -255,39 +260,31 @@
     gap: 4px;
     min-width: 0;
     min-height: 0;
-    padding: 4px 5px 5px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--surface-raised);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--ink-soft);
     text-align: left;
-  }
-  .month-day:hover { border-color: var(--line-strong); }
-  .month-day:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .month-day[data-selected="true"] {
-    border-color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent);
-    background: var(--surface-solid);
-    color: var(--ink);
   }
   .month-day .num {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 4px;
     min-height: 10px;
     font: 600 10px/1 var(--font-body);
     font-variant-numeric: tabular-nums;
   }
+  .month-day:hover .num { color: var(--ink); }
+  .month-day:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .month-day[data-today="true"] .num { color: var(--accent); }
   .month-day[data-selected="true"] .num { color: var(--ink); }
-  .month-day .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .month-day[data-selected="true"] .month-stripes { box-shadow: 0 2px 0 var(--accent); }
   .month-stripes {
     flex: 1;
     min-height: 10px;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    border-radius: var(--radius-xs);
-    overflow: hidden;
   }
   .month-stripe { display: block; }
   .month-blank { visibility: hidden; }
@@ -595,11 +592,10 @@
     .day-status { min-height: 140px; }
     /* Seven columns still fit a narrow window; the rows keep a fixed height
        and the page scrolls instead of squeezing the colours away. */
-    .month-card { flex: none; min-height: 0; }
-    .month-weekdays, .month-grid { gap: 3px; }
-    .month-grid { grid-auto-rows: 46px; }
+    .month { flex: none; min-height: 0; }
+    .month-weekdays, .month-grid { gap: 5px 4px; }
+    .month-grid { grid-auto-rows: 44px; }
     .month-grid[data-note="1"] { min-height: 110px; }
-    .month-day { padding: 3px 4px 4px; }
     .picker { grid-template-columns: 1fr; }
     .well { width: 100%; height: 96px; min-height: 96px; }
     .picker-fields { grid-template-columns: 1fr; }
@@ -644,7 +640,8 @@
       </div>
       <div class="day-strip" id="day-strip" aria-live="polite"></div>
     </article>
-    <section class="month-card" aria-label="这个月的配色">
+    <section class="month" aria-label="这个月的配色">
+      <h2 class="month-title" id="month-label">—</h2>
       <div class="month-weekdays" aria-hidden="true">
         <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
       </div>
@@ -797,6 +794,7 @@
     dayToday: document.getElementById("day-today"),
     dayStrip: document.getElementById("day-strip"),
     monthGrid: document.getElementById("month-grid"),
+    monthLabel: document.getElementById("month-label"),
     daySave: document.getElementById("day-save"),
     dayCopy: document.getElementById("day-copy"),
     well: document.getElementById("well"),
@@ -1102,13 +1100,9 @@
     var label = document.createElement("span");
     label.textContent = String(Number(day.date.slice(8)));
     num.appendChild(label);
-    if (day.date === state.today) {
-      // A quiet dot marks today; the selected day is the cell with the ring.
-      var dot = document.createElement("span");
-      dot.className = "dot";
-      dot.setAttribute("aria-hidden", "true");
-      num.appendChild(dot);
-    }
+    // Today's number is the accent; the selected day is the one with the
+    // accent underline under its band.
+    cell.dataset.today = String(day.date === state.today);
 
     var stripes = document.createElement("span");
     stripes.className = "month-stripes";
@@ -1126,16 +1120,24 @@
     return cell;
   }
 
+  function monthTitleOf(key) {
+    if (!key) return "";
+    var parts = key.split("-");
+    return Number(parts[0]) + "年" + Number(parts[1]) + "月";
+  }
+
   function markMonthSelection() {
     Array.prototype.forEach.call(els.monthGrid.querySelectorAll(".month-day[data-date]"), function (cell) {
       var selected = cell.dataset.date === state.date;
       cell.dataset.selected = String(selected);
+      cell.dataset.today = String(cell.dataset.date === state.today);
       cell.setAttribute("aria-current", selected ? "date" : "false");
     });
   }
 
   function renderMonthNote(text, withRetry) {
     var grid = els.monthGrid;
+    els.monthLabel.textContent = monthTitleOf(state.month.key) || "—";
     grid.textContent = "";
     grid.dataset.note = "1";
     var note = document.createElement("p");
@@ -1161,6 +1163,7 @@
     }
     grid.textContent = "";
     delete grid.dataset.note;
+    els.monthLabel.textContent = monthTitleOf(state.month.key);
     // Monday first, like the weekday row above the grid.
     var offset = (parseKey(days[0].date).getDay() + 6) % 7;
     for (var blank = 0; blank < offset; blank++) {

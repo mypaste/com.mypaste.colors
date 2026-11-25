@@ -18,7 +18,7 @@ import (
 )
 
 // Version is the extension version written into archive manifests.
-const Version = "1.0.2"
+const Version = "1.0.3"
 
 const commandRequest = "colors.request"
 
