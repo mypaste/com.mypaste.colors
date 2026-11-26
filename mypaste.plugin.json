@@ -3,7 +3,7 @@
   "kind": "ui",
   "id": "com.mypaste.colors",
   "name": "配色",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "每天一款配色，也可以从任意颜色生成深浅色阶；Ctrl+Alt+C 一步打开，取色页从上次用过的颜色接着展开；收藏留在扩展自己的私有目录，复制走宿主剪贴板。",
   "capabilities": [
     "storage.plugin"
@@ -20,7 +20,8 @@
       "entry": "panel.html",
       "order": 56,
       "icon": "chart",
-      "shortcut": "Ctrl+Alt+C"
+      "shortcut": "Ctrl+Alt+C",
+      "panelShortcut": "Ctrl+Alt+C"
     }
   ],
   "commands": [
